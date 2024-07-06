@@ -2,11 +2,14 @@ from rest_framework import viewsets,status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from core.api.serializers import ArticleSerializer
-from core.models import Article
+from core.api.serializers import ArticleSerializer,JournalArticleSerializer
+from core.models import Article,Journalist
 from core.api import serializers
 from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
+from django.core.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator
+
 import requests
 class ArticleListView(APIView):
     def get(self, request):
@@ -21,6 +24,18 @@ class ArticleListView(APIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+class JournalArticleListView(APIView):
+    def get(self, request):
+        journalist = Journalist.objects.all()
+        serializers= JournalArticleSerializer(journalist,many=True,context={'request': request})
+        return Response(serializers.data,status=status.HTTP_200_OK)
+    def post(self,request):
+        serializer = JournalArticleSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class ArticleDetailView(APIView):
     def get_object(self,pk):
